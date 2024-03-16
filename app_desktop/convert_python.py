@@ -1,6 +1,7 @@
 import os
 import nbformat
 from nbconvert import PythonExporter
+import subprocess
 
 def convert_ipynb_to_py(ipynb_file, output_folder):
     # ファイル名を取得
@@ -25,24 +26,46 @@ def convert_ipynb_to_py(ipynb_file, output_folder):
     print(f'successfully')
 
 def traverse_folder(folder_path):
-    print(folder_path)
+    # print(folder_path)
 
     for file_name in os.listdir(folder_path):
         file_path = os.path.join(folder_path, file_name)
         if os.path.isdir(file_path):
             traverse_folder(file_path)
+        elif is_python_file(file_path):
+            break
         else:
             print(file_path)
+            convert_ipynb_to_py(file_path, CURRENT_PATH+WORK_PATH+SAVE_FOLDER)
+
+def is_python_file(file_path):
+    _, file_extension = os.path.splitext(file_path)
+    return file_extension.lower() == '.py'
+
+def run_python_file(folder_path):
+    
+    for file_name in os.listdir(folder_path):
+        file_path = os.path.join(folder_path, file_name)
+        if os.path.isdir(file_path):
+            continue
+        else:
+            result = subprocess.run(['python', file_path], capture_output=True, text=True)
+            if result.returncode == 0:
+                print("Pythonファイルを正常に実行されました")
+                print(result.stdout)
+            else:
+                print("Pythonファイルの実行中にエラーが発生しました")
+                print(result.stderr)
 
 CURRENT_PATH = os.getcwd()
 WORK_PATH = "/kaitou/第1回"
-traverse_folder(CURRENT_PATH+WORK_PATH)
-
-ipynb_file_path = "a.ipynb"
-output_folder_path = "python_folder"
+SAVE_FOLDER = "/python_folder"
 
 # フォルダが存在しない場合は作成
-# if not os.path.exists(output_folder_path):
-#     os.makedirs(output_folder_path)
+if not os.path.exists(CURRENT_PATH+WORK_PATH+SAVE_FOLDER):
+    os.makedirs(CURRENT_PATH+WORK_PATH+SAVE_FOLDER)
 
 # .ipynbファイルを.pyファイルに変換して保存
+traverse_folder(CURRENT_PATH+WORK_PATH)
+
+run_python_file(CURRENT_PATH+WORK_PATH+SAVE_FOLDER)

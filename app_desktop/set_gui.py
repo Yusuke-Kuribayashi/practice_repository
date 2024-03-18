@@ -36,9 +36,15 @@ class GUI_Config(tk.Frame):
         self.score_combobox.current(5)
         
         # 次へボタン ####
-        self.exit_button = tk.Button(self.master,
+        self.next_button = tk.Button(self.master,
                                      text="次の採点")
-        self.exit_button.grid(row=5, column=0, columnspan=2, pady=10)
+        self.next_button.grid(row=5, column=0, columnspan=2, pady=10)
+
+        # exitボタン ####
+        self.exit_button = tk.Button(self.master,
+                                     text="閉じる",
+                                     command=lambda:self.master.destroy())
+        self.exit_button.grid(row=6, column=0, columnspan=2, pady=10)
 
 if __name__=="__main__":
     root = tk.Tk()

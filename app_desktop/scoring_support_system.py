@@ -1,41 +1,82 @@
+# -*- coding: utf-8 -*-
+from set_gui import GUI_Config
 import tkinter as tk
-from tkinter import ttk
+import nbformat
+from nbconvert import PythonExporter
+import os, subprocess
 
-def say_hello():
-    hello_window = tk.Toplevel(root)
-    hello_label = tk.Label(hello_window, text="Hello World!")
-    hello_label.pack()
+class ScoringSupportSystem(GUI_Config):
+    def __init__(self, master=None):
+        super().__init__(master)
 
-def show_result():
-    result_window = tk.Toplevel(root)
-    selected_value = score_combobox.get()
-    result_label = tk.Label(result_window, text=f"Selected score: {selected_value}")
-    result_label.pack()
+        self.start_button.configure(command=lambda:print("aaa"))
 
-def start_program():
-    # selected_value = round_combobox.get()
-    # for i in range(int(selected_value)):
-    say_hello()
+    # フォルダーを移動する ####
+    def traverse_folder(self):
+        WORK_DIR_PATH = os.getcwd()+"/kaitou/"+self.lesson_combobox.get()
+        SAVE_DIR_PATH = os.getcwd()+"/kaitou/"+self.lesson_combobox.get()+"/python_folder"
+        for file_name in os.listdir(WORK_DIR_PATH):
+            file_path = os.path.join(WORK_DIR_PATH, file_name)
+            if os.path.isdir(file_path):
+                self.traverse_folder(file_path)
+            elif self.is_python_file(file_path):
+                break
+            else:
+                print(file_path)
+                self.convert_ipynb_to_py(WORK_DIR_PATH, SAVE_DIR_PATH)
 
-root = tk.Tk()
-root.title("Program")
+    # ipynbファイルをpythonファイルに変換する関数 ####
+    def convert_ipynb_to_py(self, ipynb_file, output_folder):
+        # ファイル名を取得
+        file_name = os.path.basename(ipynb_file)
+        # 拡張子を除去して.pyファイル名を作成
+        py_file = os.path.splitext(file_name)[0]+".py"
+        # 出力先のパスを作成
+        output_path = os.path.join(output_folder, py_file)
 
-round_label = tk.Label(root, text="Select round:")
-round_label.grid(row=0, column=0, padx=10, pady=5)
-round_combobox = ttk.Combobox(root, values=["第"+str(i)+"回" for i in range(1, 6)])
-round_combobox.grid(row=0, column=1, padx=10, pady=5)
+        # .ipynbファイルを読み込む
+        with open(ipynb_file, 'r', encoding='utf-8') as f:
+            nb = nbformat.read(f, as_version=4)
 
-start_button = tk.Button(root, text="Start")
-start_button.grid(row=1, column=0, columnspan=2, pady=10)
-start_button.configure(command=start_program)
+        # PythonExporterを使用して，.pyファイルに変換
+        exporter = PythonExporter()
+        source, _ = exporter.from_notebook_node(nb)
 
-score_label = tk.Label(root, text="Select score:")
-score_label.grid(row=2, column=0, padx=10, pady=5)
-score_combobox = ttk.Combobox(root, values=["A", "B", "C", "D", "E"])
-score_combobox.grid(row=2, column=1, padx=10, pady=5)
-score_combobox.current(0)
+        # .pyファイルに書き込む
+        with open(output_path, 'w', encoding='utf-8') as f:
+            f.write(source)
 
-exit_button = tk.Button(root, text="Exit", command=show_result)
-exit_button.grid(row=3, column=0, columnspan=2, pady=10)
+        print(f'successfully')
 
-root.mainloop()
+    #　pythonファイルであるかを確認 ####
+    def is_python_file(self, file_path):
+        _, file_extension = os.path.splitext(file_path)
+        return file_extension.lower() == '.py'
+    
+    # pythonファイルを実行 ####
+    def run_python_file(self, folder_path):
+        for file_name in os.listdir(folder_path):
+            file_path = os.path.join(folder_path, file_name)
+            if os.path.isdir(file_path):
+                continue
+            else:
+                result = subprocess.run(['python', file_path], capture_output=True, text=True)
+                if result.returncode == 0:
+                    print("Pythonファイルを正常に実行されました")
+                    print(result.stdout)
+                else:
+                    print("Pythonファイルの実行中にエラーが発生しました")
+                    print(result.stderr)
+
+    # 新しいwindowの作成 ####
+    def create_new_window(self):
+        execute_window = tk.Toplevel(self.master)
+        execute_window.title("python window")
+        label = tk.Label(execute_window, text="This is a execute window")
+        label.pack()
+
+
+if __name__=="__main__":
+    root = tk.Tk()
+    app = GUI_Config(root)
+    app.mainloop()

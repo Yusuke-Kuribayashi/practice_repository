@@ -2,3 +2,5 @@ build/
 dist/
 kaitou/
 *.pyc
+.ipynb_checkpoints/
+.jupyter/

@@ -90,8 +90,6 @@ class ScoringLibs():
                 if result.returncode == 0:
                     print("Pythonファイルを正常に実行されました")
                     print(result.stdout)
-                    time.sleep(5)
-                    clear_output()
                 else:
                     print("Pythonファイルの実行中にエラーが発生しました")
                     print(result.stderr)

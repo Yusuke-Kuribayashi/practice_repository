@@ -23,7 +23,7 @@ class ScoringLibs():
     """
     def set_save_dir_path(self, save_dir_path):
         self.save_dir_path = save_dir_path + "/" + self.save_dir_name
-        print(f'save dir: {self.save_dir_path}')
+        # print(f'save dir: {self.save_dir_path}')
         self.create_dir(self.save_dir_path)
 
     """
@@ -59,7 +59,7 @@ class ScoringLibs():
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write(source)
 
-        print(f'successfully {os.path.basename(output_path)}')
+        # print(f'successfully {os.path.basename(output_path)}')
 
     """
     @brief: 選択したディレクトリ内にあるディレクトリを走査し,すべてのipynbファイルをpyファイルに変換する関数
@@ -80,16 +80,34 @@ class ScoringLibs():
     """
     @brief: pythonファイルを実行する関数
     """
-    def run_python_file(self):
-        for file_name in os.listdir(self.save_dir_path):
-            file_path = os.path.join(self.save_dir_path, file_name)
-            if os.path.isdir(file_path):
-                continue
+    def run_python_file(self, file_name: str, print_func = print):
+        file_path = os.path.join(self.save_dir_path, file_name)
+        if os.path.isdir(file_path):
+            print_func(f'fileではありません')
+        else:
+            result = subprocess.run(['python', file_path], capture_output=True, text=True)
+            if result.returncode == 0:
+                print_func(f'[Pythonファイルを正常に実行されました]')
+                print_func(result.stdout)
             else:
-                result = subprocess.run(['python', file_path], capture_output=True, text=True)
-                if result.returncode == 0:
-                    print("Pythonファイルを正常に実行されました")
-                    print(result.stdout)
-                else:
-                    print("Pythonファイルの実行中にエラーが発生しました")
-                    print(result.stderr)
+                print_func(f'[Pythonファイルの実行中にエラーが発生しました]')
+                print_func(result.stderr)
+
+    """
+    @brief: pythonファイルの中身を表示する関数
+    """
+    def cat_python_file(self, file_name: str, print_func = print):
+        file_path = os.path.join(self.save_dir_path, file_name)
+        print_func(f'file_path: {file_path}')
+        try:
+            if os.path.isdir(file_path):
+                print_func(f'[fileではありません]')
+            elif file_name.endswith('.py'):
+                with open(file_path, 'r', encoding='utf-8') as file:
+                    file_content = file.read()
+                    # print_func(f'pythonファイルの内容 ({file_name}) :')
+                    print_func(file_content)
+            else:
+                print_func(f'[ファイル"{file_name}"はpythonファイルではありません]')
+        except FileNotFoundError:
+            print_func(f'[ファイルが見つかりませんでした]')        

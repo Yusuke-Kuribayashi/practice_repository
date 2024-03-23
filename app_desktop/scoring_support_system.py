@@ -8,10 +8,11 @@ class ScoringSupportSystem(tk.Frame):
     def __init__(self, master=None):
         super().__init__(master)
         self.sLib = ScoringLibs()
-        self.next_button_status = True
+        self.run_flag = False
+
 
         self.master.title("Scoring Support System")
-        self.master.geometry("400x300")
+        self.master.geometry("1000x500")
 
         # 採点する回を選択 ####
         self.lesson_label = tk.Label(self.master,
@@ -54,6 +55,16 @@ class ScoringSupportSystem(tk.Frame):
                                       command=lambda:self.setup_func())
         self.setup_button.grid(row=1, column=1, columnspan=2, pady=10)
 
+        # プログラム実行フラグ ####
+        self.run_button = tk.Button(self.master,
+                                      text="run python file",
+                                      command=lambda:self.flag_func())
+        self.run_button.grid(row=1, column=3, columnspan=2, pady=10)
+
+        # ウィジェットの作成 ####
+        self.text_widget = tk.Text(self.master, wrap="word")
+        self.text_widget.grid(row=2, column=2, rowspan=7, columnspan=3)
+
     def setup_func(self):
         dir = ["第"+str(i)+"回" for i in range(1,7)]
         for i in dir:
@@ -62,42 +73,46 @@ class ScoringSupportSystem(tk.Frame):
         print(f'finish setting up successfully')
 
     def scoring_start(self):
+        # pythonファイルを一か所に集める
         WORK_DIR = os.getcwd() + "/kaitou/" + self.lesson_combobox.get()
         self.sLib.set_save_dir_path(WORK_DIR)
         self.sLib.traverse_folder(WORK_DIR)
-        
-        other_window = tk.Toplevel(self)
-        other_window.title("other window")
-        other_window.geometry("500x400")
 
-        # other_window.grab_set()
-        other_window.focus_set()
-        other_window.transient(self.master)
+        # pythonディレクトリの中身のファイルをすべて取得
+        self.file_list = os.listdir(self.sLib.save_dir_path)
 
-        for file_name in os.listdir(self.sLib.save_dir_path):
-            if not self.next_button_status:
-                print(f'Waiting for pressing next button....')
-                while not self.next_button_status:
-                    time.sleep(1)
+        # 初めのファイルを実行
+        self.sLib.cat_python_file(self.file_list[0], self.custom_print)
+        if self.run_flag:
+            self.custom_print(f'----------\n')
+            self.sLib.run_python_file(self.file_list[0], self.custom_print)
 
-            file_path = os.path.join(self.sLib.save_dir_path, file_name)
-            if os.path.isdir(file_path):
-                continue
-            else:
-                result = subprocess.run(['python', file_path], capture_output=True, text=True)
-                if result.returncode == 0:
-                    print("Pythonファイルを正常に実行されました")
-                    print(result.stdout)
-                else:
-                    print("Pythonファイルの実行中にエラーが発生しました")
-                    print(result.stderr)
-                self.next_button_status = False
-
-        app.wait_window(other_window)
+        del self.file_list[0]
     
     def next_stage(self):
-        self.next_button_status = True
+        self.text_widget.delete(1.0, tk.END)
+        time.sleep(2)
 
+        # エクセルへの書き込み
+        # self.score_combobox.get() 値の取得
+        
+        # 次のプログラムの実行
+        if len(self.file_list) > 0:
+            self.sLib.cat_python_file(self.file_list[0], self.custom_print)
+            if self.run_flag:
+                self.custom_print(f'----------\n')
+                self.sLib.run_python_file(self.file_list[0], self.custom_print)
+            del self.file_list[0]
+        else:
+            self.custom_print(f'Scoring has finished')
+
+    def custom_print(self, *args, **kwargs):
+        text = " ".join(map(str, args)) + "\n"
+        self.text_widget.insert("end", text)
+        self.text_widget.see("end")
+
+    def flag_func(self):
+        self.run_flag = not self.run_flag
 
 if __name__=='__main__':
     root = tk.Tk()
